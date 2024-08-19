@@ -151,7 +151,21 @@ def index():
                     {
                         "role": "user",
                         "parts": [
-                            "# Instructions for Stock Analysis\n\nAs an LLM, your task is to analyze the provided stock information and present a balanced view of the stock's upsides and downsides, followed by a final recommendation. Follow these steps:\n\n1. Identify Key Metrics:\n   - Review all provided metrics, including valuation, dividends, growth and performance, analyst opinions, financial health, profitability, market position, and risks.\n\n2. Categorize Upsides:\n   - List 4-5 positive aspects of the stock based on the data.\n   - For each upside, provide a brief explanation of why it's beneficial.\n\n3. Categorize Downsides:\n   - List 4-5 negative aspects or risks associated with the stock.\n   - Explain the potential impact of each downside on the stock's performance or investor sentiment.\n\n4. Analyze Overall Picture:\n   - Consider how the upsides and downsides balance each other.\n   - Evaluate the stock's current performance in the context of its potential future growth.\n\n5. Categorize Investment Horizon:\n   - Based on the analysis, categorize the stock as most suitable for:\n     a) Short-term investment (less than 1 year)\n     b) Medium-term investment (1-3 years)\n     c) Long-term investment (3+ years)\n   - Provide reasoning for this categorization, considering factors such as:\n     - Current valuation relative to growth prospects\n     - Dividend policy and yield\n     - Market trends and company's competitive position\n     - Potential catalysts for stock price movement in different timeframes\n\n6. Formulate Recommendation:\n   - Based on the analysis, provide one of the following recommendations: Strong Buy, Buy, Hold, Sell, or Strong Sell.\n   - Explain the reasoning behind your recommendation, considering different investor profiles (e.g., risk-averse vs. growth-oriented).\n\n7. Additional Considerations:\n   - Comment on how the stock might fit into a diversified portfolio.\n   - Mention any key metrics that investors should monitor going forward.\n\n8. Summarize:\n   - Provide a concise summary (2-3 sentences) of your analysis, including the recommended investment horizon and overall recommendation.\n\nRemember to maintain a balanced and objective tone throughout the analysis. Avoid using overly technical jargon, and explain any financial terms that may not be familiar to all readers. Your analysis should be thorough yet accessible to investors with varying levels of financial knowledge.\n",
+                           f"""
+            Analyze the stock {ticker} based on the following data:
+            {stock_evaluation}
+            You should also include when to enter and exit the stock for long term, medium term, and short term.
+            
+            Provide a concise analysis including:
+            1. Overall market sentiment
+            2. Key strengths and weaknesses
+            3. Potential catalysts for price movement
+            4. Risks to consider
+            5. Long-term recommendation (1+ years) with a brief explanation
+            6. Short-term recommendation (0-6 months) with a brief explanation
+            
+            Format your response in Markdown for easy reading.
+                            """,
                             f"Analyze the following stock: '{ticker}')",
                             f"Stock Evaluation:\n{json.dumps(stock_evaluation, indent=2)}"
                         ],
@@ -193,10 +207,24 @@ def chat():
         {
             "role": "user",
             "parts": [
-                "# Instructions for Stock Analysis\n\nAs an LLM, your task is to analyze the provided stock information and present a balanced view of the stock's upsides and downsides, followed by a final recommendation. Follow these steps:\n\n1. Identify Key Metrics:\n   - Review all provided metrics, including valuation, dividends, growth and performance, analyst opinions, financial health, profitability, market position, and risks.\n\n2. Categorize Upsides:\n   - List 4-5 positive aspects of the stock based on the data.\n   - For each upside, provide a brief explanation of why it's beneficial.\n\n3. Categorize Downsides:\n   - List 4-5 negative aspects or risks associated with the stock.\n   - Explain the potential impact of each downside on the stock's performance or investor sentiment.\n\n4. Analyze Overall Picture:\n   - Consider how the upsides and downsides balance each other.\n   - Evaluate the stock's current performance in the context of its potential future growth.\n\n5. Categorize Investment Horizon:\n   - Based on the analysis, categorize the stock as most suitable for:\n     a) Short-term investment (less than 1 year)\n     b) Medium-term investment (1-3 years)\n     c) Long-term investment (3+ years)\n   - Provide reasoning for this categorization, considering factors such as:\n     - Current valuation relative to growth prospects\n     - Dividend policy and yield\n     - Market trends and company's competitive position\n     - Potential catalysts for stock price movement in different timeframes\n\n6. Formulate Recommendation:\n   - Based on the analysis, provide one of the following recommendations: Strong Buy, Buy, Hold, Sell, or Strong Sell.\n   - Explain the reasoning behind your recommendation, considering different investor profiles (e.g., risk-averse vs. growth-oriented).\n\n7. Additional Considerations:\n   - Comment on how the stock might fit into a diversified portfolio.\n   - Mention any key metrics that investors should monitor going forward.\n\n8. Summarize:\n   - Provide a concise summary (2-3 sentences) of your analysis, including the recommended investment horizon and overall recommendation.\n\nRemember to maintain a balanced and objective tone throughout the analysis. Avoid using overly technical jargon, and explain any financial terms that may not be familiar to all readers. Your analysis should be thorough yet accessible to investors with varying levels of financial knowledge.\n",
-                f"Analyze the following stock: '{ticker}'",
-                f"Stock Evaluation:\n{json.dumps(stock_evaluation, indent=2)}"
-            ],
+                           f"""
+            Analyze the stock {ticker} based on the following data:
+            {stock_evaluation}
+            You should also include when to enter and exit the stock for long term, medium term, and short term.
+            
+            Provide a concise analysis including:
+            1. Overall market sentiment
+            2. Key strengths and weaknesses
+            3. Potential catalysts for price movement
+            4. Risks to consider
+            5. Long-term recommendation (1+ years) with a brief explanation
+            6. Short-term recommendation (0-6 months) with a brief explanation
+            
+            Format your response in Markdown for easy reading.
+                            """,
+                            f"Analyze the following stock: '{ticker}')",
+                            f"Stock Evaluation:\n{json.dumps(stock_evaluation, indent=2)}"
+        ],
         },
         {
             "role": "model",
