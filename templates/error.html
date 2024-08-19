@@ -1,0 +1,25 @@
+<!-- templates/error.html -->
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            Error
+        </h2>
+    </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+        <div class="sm:px-6 sm:py-5">
+            <p class="text-red-600">{{ error_message }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="mt-8 text-center">
+    <a href="/" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Try Again
+    </a>
+</div>
+{% endblock %}

@@ -117,47 +117,58 @@ def evaluate_stock(ticker):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        ticker = request.form['ticker']
-        stock_evaluation = evaluate_stock(ticker)
-        
-        # Configure Google AI
-        genai.configure(api_key="AIzaSyDSYuKyOG8nQkNK4PNJqtIyrKJkfIeBgUQ")
+        try:
+            ticker = request.form['ticker']
+            app.logger.info(f"Analyzing stock: {ticker}")
 
-        # Create the model
-        generation_config = {
-            "temperature": 1,
-            "top_p": 0.95,
-            "top_k": 64,
-            "max_output_tokens": 8192,
-            "response_mime_type": "text/plain",
-        }
+            stock_evaluation = evaluate_stock(ticker)
+            app.logger.debug(f"Stock evaluation: {json.dumps(stock_evaluation, indent=2)}")
 
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro",
-            generation_config=generation_config,
-        )
+            # Configure Google AI
+            genai.configure(api_key="AIzaSyDSYuKyOG8nQkNK4PNJqtIyrKJkfIeBgUQ")
 
-        chat_session = model.start_chat(
-            history=[
-                {
-                    "role": "user",
-                    "parts": [
-                        "# Instructions for Stock Analysis\n\nAs an LLM, your task is to analyze the provided stock information and present a balanced view of the stock's upsides and downsides, followed by a final recommendation. Follow these steps:\n\n1. Identify Key Metrics:\n   - Review all provided metrics, including valuation, dividends, growth and performance, analyst opinions, financial health, profitability, market position, and risks.\n\n2. Categorize Upsides:\n   - List 4-5 positive aspects of the stock based on the data.\n   - For each upside, provide a brief explanation of why it's beneficial.\n\n3. Categorize Downsides:\n   - List 4-5 negative aspects or risks associated with the stock.\n   - Explain the potential impact of each downside on the stock's performance or investor sentiment.\n\n4. Analyze Overall Picture:\n   - Consider how the upsides and downsides balance each other.\n   - Evaluate the stock's current performance in the context of its potential future growth.\n\n5. Categorize Investment Horizon:\n   - Based on the analysis, categorize the stock as most suitable for:\n     a) Short-term investment (less than 1 year)\n     b) Medium-term investment (1-3 years)\n     c) Long-term investment (3+ years)\n   - Provide reasoning for this categorization, considering factors such as:\n     - Current valuation relative to growth prospects\n     - Dividend policy and yield\n     - Market trends and company's competitive position\n     - Potential catalysts for stock price movement in different timeframes\n\n6. Formulate Recommendation:\n   - Based on the analysis, provide one of the following recommendations: Strong Buy, Buy, Hold, Sell, or Strong Sell.\n   - Explain the reasoning behind your recommendation, considering different investor profiles (e.g., risk-averse vs. growth-oriented).\n\n7. Additional Considerations:\n   - Comment on how the stock might fit into a diversified portfolio.\n   - Mention any key metrics that investors should monitor going forward.\n\n8. Summarize:\n   - Provide a concise summary (2-3 sentences) of your analysis, including the recommended investment horizon and overall recommendation.\n\nRemember to maintain a balanced and objective tone throughout the analysis. Avoid using overly technical jargon, and explain any financial terms that may not be familiar to all readers. Your analysis should be thorough yet accessible to investors with varying levels of financial knowledge.\n",
-                        f"Analyze the following stock: '{ticker}')",
-                        f"Stock Evaluation:\n{json.dumps(stock_evaluation, indent=2)}"
-                    ],
-                },
-            ]
-        )
+            # Create the model
+            generation_config = {
+                "temperature": 1,
+                "top_p": 0.95,
+                "top_k": 64,
+                "max_output_tokens": 8192,
+                "response_mime_type": "text/plain",
+            }
 
-        response = chat_session.send_message("Provide the analysis based on the given instructions and stock evaluation. Use Markdown formatting for better readability.")
-        analysis = response.text
-        analysis_html = markdown2.markdown(analysis)
+            model = genai.GenerativeModel(
+                model_name="gemini-1.5-pro",
+                generation_config=generation_config,
+            )
 
-        # Store the original analysis in the session
-        session['original_analysis'] = analysis
+            chat_session = model.start_chat(
+                history=[
+                    {
+                        "role": "user",
+                        "parts": [
+                            "# Instructions for Stock Analysis\n\nAs an LLM, your task is to analyze the provided stock information and present a balanced view of the stock's upsides and downsides, followed by a final recommendation. Follow these steps:\n\n1. Identify Key Metrics:\n   - Review all provided metrics, including valuation, dividends, growth and performance, analyst opinions, financial health, profitability, market position, and risks.\n\n2. Categorize Upsides:\n   - List 4-5 positive aspects of the stock based on the data.\n   - For each upside, provide a brief explanation of why it's beneficial.\n\n3. Categorize Downsides:\n   - List 4-5 negative aspects or risks associated with the stock.\n   - Explain the potential impact of each downside on the stock's performance or investor sentiment.\n\n4. Analyze Overall Picture:\n   - Consider how the upsides and downsides balance each other.\n   - Evaluate the stock's current performance in the context of its potential future growth.\n\n5. Categorize Investment Horizon:\n   - Based on the analysis, categorize the stock as most suitable for:\n     a) Short-term investment (less than 1 year)\n     b) Medium-term investment (1-3 years)\n     c) Long-term investment (3+ years)\n   - Provide reasoning for this categorization, considering factors such as:\n     - Current valuation relative to growth prospects\n     - Dividend policy and yield\n     - Market trends and company's competitive position\n     - Potential catalysts for stock price movement in different timeframes\n\n6. Formulate Recommendation:\n   - Based on the analysis, provide one of the following recommendations: Strong Buy, Buy, Hold, Sell, or Strong Sell.\n   - Explain the reasoning behind your recommendation, considering different investor profiles (e.g., risk-averse vs. growth-oriented).\n\n7. Additional Considerations:\n   - Comment on how the stock might fit into a diversified portfolio.\n   - Mention any key metrics that investors should monitor going forward.\n\n8. Summarize:\n   - Provide a concise summary (2-3 sentences) of your analysis, including the recommended investment horizon and overall recommendation.\n\nRemember to maintain a balanced and objective tone throughout the analysis. Avoid using overly technical jargon, and explain any financial terms that may not be familiar to all readers. Your analysis should be thorough yet accessible to investors with varying levels of financial knowledge.\n",
+                            f"Analyze the following stock: '{ticker}')",
+                            f"Stock Evaluation:\n{json.dumps(stock_evaluation, indent=2)}"
+                        ],
+                    },
+                ]
+            )
 
-        return render_template('result.html', ticker=ticker, analysis=analysis_html, evaluation=stock_evaluation)
+            response = chat_session.send_message("Provide the analysis based on the given instructions and stock evaluation. Use Markdown formatting for better readability.")
+            analysis = response.text
+            analysis_html = markdown2.markdown(analysis)
+
+            # Store the original analysis and stock evaluation in the session
+            session['original_analysis'] = analysis
+            session['stock_evaluation'] = stock_evaluation
+            session['ticker'] = ticker
+
+            app.logger.info(f"Analysis completed for {ticker}")
+            return render_template('result.html', ticker=ticker, analysis=analysis_html, evaluation=stock_evaluation)
+        except Exception as e:
+            app.logger.error(f"Error occurred: {str(e)}", exc_info=True)
+            return render_template('error.html', error_message="An error occurred while analyzing the stock. Please try again.")
+
     return render_template('index.html')
 
 @app.route('/chat', methods=['POST'])
