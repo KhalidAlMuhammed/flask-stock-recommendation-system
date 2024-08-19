@@ -119,7 +119,7 @@ def index():
         stock_evaluation = evaluate_stock(ticker)
         
         # Configure Google AI
-        genai.configure(api_key="YOUR_API_KEY_HERE")
+        genai.configure(api_key="AIzaSyDSYuKyOG8nQkNK4PNJqtIyrKJkfIeBgUQ")
 
         # Create the model
         generation_config = {
