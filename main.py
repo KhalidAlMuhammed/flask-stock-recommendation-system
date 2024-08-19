@@ -7,7 +7,6 @@ import json
 
 app = Flask(__name__)
 
-
 def fetch_stock_data(ticker):
   stock = yf.Ticker(ticker)
   info = stock.info
@@ -156,4 +155,4 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
