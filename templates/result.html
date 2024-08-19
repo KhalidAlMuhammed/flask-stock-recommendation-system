@@ -161,6 +161,32 @@ function addMessageToChat(role, content) {
     chatHistory.appendChild(messageDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
+function clearSession() {
+    fetch('/clear_session', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Session cleared');
+    })
+    .catch((error) => {
+        console.error('Error clearing session:', error);
+    });
+}
+
+// Call clearSession when the user leaves the page
+window.addEventListener('beforeunload', clearSession);
+
+// Call clearSession when the user clicks the "Analyze Another Stock" button
+document.querySelector('a[href="/"]').addEventListener('click', (e) => {
+    e.preventDefault();
+    clearSession();
+    window.location.href = '/';
+});
+
 </script>
 {% endblock %}
 

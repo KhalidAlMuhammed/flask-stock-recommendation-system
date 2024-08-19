@@ -118,6 +118,10 @@ def evaluate_stock(ticker):
   evaluation['full_info'] = data['info']
     
   return evaluation
+@app.route('/clear_session', methods=['POST'])
+def clear_session():
+    session.clear()
+    return jsonify({'status': 'success'})
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
