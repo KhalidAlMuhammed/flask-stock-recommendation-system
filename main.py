@@ -44,15 +44,20 @@ def evaluate_stock(ticker):
   evaluation = {}
   
   # Valuation
+    # Valuation
   evaluation['valuation'] = {
-    'current_price': data['current_price'],
-    'pe_ratio': data['pe_ratio'],
-    'pe_analysis': 'High' if data['pe_ratio'] and not math.isnan(data['pe_ratio']) and data['pe_ratio'] > 25 else 'Moderate' if data['pe_ratio'] and not math.isnan(data['pe_ratio']) and data['pe_ratio'] > 15 else 'Low',
-    'forward_pe': data['forward_pe'],
-    'forward_pe_trend': 'Improving' if data['forward_pe'] and not math.isnan(data['forward_pe']) and data['forward_pe'] < data['pe_ratio'] else 'Worsening',
-    'price_to_book': data['price_to_book'],
-    'price_to_book_analysis': 'High' if data['price_to_book'] and not math.isnan(data['price_to_book']) and data['price_to_book'] > 3 else 'Moderate' if data['price_to_book'] and not math.isnan(data['price_to_book']) and data['price_to_book'] > 1 else 'Low'
-  }
+        'current_price': data['current_price'],
+        'pe_ratio': data['pe_ratio'],
+        'pe_analysis': 'High' if data['pe_ratio'] and not math.isnan(data['pe_ratio']) and data['pe_ratio'] > 25 else 'Moderate' if data['pe_ratio'] and not math.isnan(data['pe_ratio']) and data['pe_ratio'] > 15 else 'Low',
+        'forward_pe': data['forward_pe'],
+        'forward_pe_trend': 'Improving' if (data['forward_pe'] is not None and data['pe_ratio'] is not None and 
+                                            not math.isnan(data['forward_pe']) and not math.isnan(data['pe_ratio']) and 
+                                            data['forward_pe'] < data['pe_ratio']) 
+                            else 'Worsening' if (data['forward_pe'] is not None and data['pe_ratio'] is not None)
+                            else 'Unknown',
+        'price_to_book': data['price_to_book'],
+        'price_to_book_analysis': 'High' if data['price_to_book'] and not math.isnan(data['price_to_book']) and data['price_to_book'] > 3 else 'Moderate' if data['price_to_book'] and not math.isnan(data['price_to_book']) and data['price_to_book'] > 1 else 'Low'
+    }
   
   # Dividends
   evaluation['dividends'] = {
