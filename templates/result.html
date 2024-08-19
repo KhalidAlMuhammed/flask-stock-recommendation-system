@@ -4,7 +4,7 @@
 {% block title %}Analysis for {{ ticker }}{% endblock %}
 
 {% block content %}
-<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
     <div class="px-4 py-5 sm:px-6">
         <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             Analysis for {{ ticker }}
@@ -15,21 +15,152 @@
             <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium text-gray-500">AI Analysis</dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    <pre class="whitespace-pre-wrap">{{ analysis }}</pre>
+                    <div class="prose">{{ analysis | safe }}</div>
                 </dd>
             </div>
             <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium text-gray-500">Raw Evaluation Data</dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    <pre class="whitespace-pre-wrap">{{ evaluation | tojson(indent=2) }}</pre>
+                    {% for category, data in evaluation.items() %}
+                        {% if data is mapping %}
+                            <h3 class="text-lg font-semibold mt-4 mb-2">{{ category | title }}</h3>
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for key, value in data.items() %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ key | replace('_', ' ') | title }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {% if value is mapping %}
+                                                    <pre class="whitespace-pre-wrap">{{ value | tojson(indent=2) }}</pre>
+                                                {% else %}
+                                                    {{ value if value is not none else 'N/A' }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    {% endfor %}
                 </dd>
             </div>
         </dl>
     </div>
 </div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Chat with AI about {{ ticker }}</h3>
+    </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+        <div id="chatHistory" class="sm:px-6 sm:py-5 space-y-4 max-h-96 overflow-y-auto">
+            {% for message in chat_history %}
+                <div class="{% if message.role == 'user' %}text-right{% endif %}">
+                    <span class="inline-block bg-{% if message.role == 'user' %}blue{% else %}gray{% endif %}-100 rounded-lg px-3 py-2 text-sm text-gray-700">
+                        {{ message.content | safe }}
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+        <form id="chatForm" class="sm:px-6 sm:py-5">
+            <div class="flex space-x-3">
+                <input type="text" id="chatInput" class="flex-grow shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Ask a question about {{ ticker }}...">
+                <button type="submit" id="sendButton" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Send
+                </button>
+            </div>
+        </form>
+        <div id="loadingIndicator" class="hidden sm:px-6 sm:py-5">
+            <div class="flex items-center justify-center">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>AI is thinking...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="mt-8 text-center">
     <a href="/" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
         Analyze Another Stock
     </a>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const sendButton = document.getElementById('sendButton');
+const loadingIndicator = document.getElementById('loadingIndicator');
+
+chatForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const message = chatInput.value;
+    if (!message) return;
+
+    // Disable input and button
+    chatInput.disabled = true;
+    sendButton.disabled = true;
+
+    // Show loading indicator
+    loadingIndicator.classList.remove('hidden');
+
+    // Add user message to chat history
+    addMessageToChat('user', message);
+
+    // Clear input
+    chatInput.value = '';
+
+    // Send message to server
+    fetch('/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        addMessageToChat('assistant', data.answer);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        addMessageToChat('assistant', 'An error occurred while fetching the answer.');
+    })
+    .finally(() => {
+        // Re-enable input and button
+        chatInput.disabled = false;
+        sendButton.disabled = false;
+
+        // Hide loading indicator
+        loadingIndicator.classList.add('hidden');
+
+        // Focus on input for next message
+        chatInput.focus();
+    });
+});
+
+function addMessageToChat(role, content) {
+    const chatHistory = document.getElementById('chatHistory');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = role === 'user' ? 'text-right' : '';
+    messageDiv.innerHTML = `
+        <span class="inline-block bg-${role === 'user' ? 'blue' : 'gray'}-100 rounded-lg px-3 py-2 text-sm text-gray-700">
+            ${content}
+        </span>
+    `;
+    chatHistory.appendChild(messageDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+</script>
+{% endblock %}
+

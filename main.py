@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, session
 import os
 import google.generativeai as genai
 import yfinance as yf
 import math
 import json
+import markdown2
 
 app = Flask(__name__)
+app.secret_key = '9b05817d47f4043ab17212afe9d13343'  # Replace with a real secret key
 
 def fetch_stock_data(ticker):
   stock = yf.Ticker(ticker)
@@ -148,11 +150,69 @@ def index():
             ]
         )
 
-        response = chat_session.send_message("Provide the analysis based on the given instructions and stock evaluation.")
+        response = chat_session.send_message("Provide the analysis based on the given instructions and stock evaluation. Use Markdown formatting for better readability.")
         analysis = response.text
+        analysis_html = markdown2.markdown(analysis)
 
-        return render_template('result.html', ticker=ticker, analysis=analysis, evaluation=stock_evaluation)
+        # Store the original analysis in the session
+        session['original_analysis'] = analysis
+
+        return render_template('result.html', ticker=ticker, analysis=analysis_html, evaluation=stock_evaluation)
     return render_template('index.html')
 
+@app.route('/chat', methods=['POST'])
+def chat():
+    data = request.json
+    message = data['message']
+    chat_history = session.get('chat_history', [])
+    ticker = session.get('ticker', '')
+    stock_evaluation = session.get('stock_evaluation', {})  # Retrieve stock evaluation from session
+
+    # Configure Google AI
+    genai.configure(api_key="AIzaSyDSYuKyOG8nQkNK4PNJqtIyrKJkfIeBgUQ")
+    model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+    print(stock_evaluation)
+    # Prepare the initial context and chat history for the AI
+    initial_context = [
+        {
+            "role": "user",
+            "parts": [
+                "# Instructions for Stock Analysis\n\nAs an LLM, your task is to analyze the provided stock information and present a balanced view of the stock's upsides and downsides, followed by a final recommendation. Follow these steps:\n\n1. Identify Key Metrics:\n   - Review all provided metrics, including valuation, dividends, growth and performance, analyst opinions, financial health, profitability, market position, and risks.\n\n2. Categorize Upsides:\n   - List 4-5 positive aspects of the stock based on the data.\n   - For each upside, provide a brief explanation of why it's beneficial.\n\n3. Categorize Downsides:\n   - List 4-5 negative aspects or risks associated with the stock.\n   - Explain the potential impact of each downside on the stock's performance or investor sentiment.\n\n4. Analyze Overall Picture:\n   - Consider how the upsides and downsides balance each other.\n   - Evaluate the stock's current performance in the context of its potential future growth.\n\n5. Categorize Investment Horizon:\n   - Based on the analysis, categorize the stock as most suitable for:\n     a) Short-term investment (less than 1 year)\n     b) Medium-term investment (1-3 years)\n     c) Long-term investment (3+ years)\n   - Provide reasoning for this categorization, considering factors such as:\n     - Current valuation relative to growth prospects\n     - Dividend policy and yield\n     - Market trends and company's competitive position\n     - Potential catalysts for stock price movement in different timeframes\n\n6. Formulate Recommendation:\n   - Based on the analysis, provide one of the following recommendations: Strong Buy, Buy, Hold, Sell, or Strong Sell.\n   - Explain the reasoning behind your recommendation, considering different investor profiles (e.g., risk-averse vs. growth-oriented).\n\n7. Additional Considerations:\n   - Comment on how the stock might fit into a diversified portfolio.\n   - Mention any key metrics that investors should monitor going forward.\n\n8. Summarize:\n   - Provide a concise summary (2-3 sentences) of your analysis, including the recommended investment horizon and overall recommendation.\n\nRemember to maintain a balanced and objective tone throughout the analysis. Avoid using overly technical jargon, and explain any financial terms that may not be familiar to all readers. Your analysis should be thorough yet accessible to investors with varying levels of financial knowledge.\n",
+                f"Analyze the following stock: '{ticker}'",
+                f"Stock Evaluation:\n{json.dumps(stock_evaluation, indent=2)}"
+            ],
+        },
+        {
+            "role": "model",
+            "parts": [chat_history[0]["content"] if chat_history else ""]
+        }
+    ]
+    
+    # Add the rest of the chat history
+    for msg in chat_history[1:]:
+        initial_context.append({
+            "role": "user" if msg["role"] == "user" else "model",
+            "parts": [msg["content"]]
+        })
+    
+    # Add the new user message
+    initial_context.append({
+        "role": "user",
+        "parts": [message]
+    })
+    
+    chat_session = model.start_chat(history=initial_context)
+    print(initial_context)
+    response = chat_session.send_message(f"You are an AI assistant specialized in analyzing the stock {ticker}. Please provide a concise and informative answer to the user's question, taking into account the context of the previous conversation.")
+    answer = response.text
+    answer_html = markdown2.markdown(answer)
+    
+    # Update the chat history
+    chat_history.append({"role": "user", "content": message})
+    chat_history.append({"role": "assistant", "content": answer})
+    session['chat_history'] = chat_history
+    
+    return jsonify({'answer': answer_html})
+
 if __name__ == '__main__':
-    app.run(debug=True, port=os.getenv("PORT", default=5000))
+    app.run(debug=True)

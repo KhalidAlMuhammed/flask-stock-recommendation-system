@@ -11,6 +11,19 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -23,8 +36,9 @@
         {% block content %}{% endblock %}
     </main>
     <footer class="bg-gray-200 text-center p-4 mt-8">
-        <p>&copy; 2024 Khalid Stock Analyzer. All rights reserved.</p>
+        <p>&copy; 2024 Khalid's Stock Analysis Tool. All rights reserved.</p>
     </footer>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
 
